@@ -1,4 +1,6 @@
-import java.io.*;
+//Vivek Shah
+//IT 114 HM2
+//JSON Project
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
