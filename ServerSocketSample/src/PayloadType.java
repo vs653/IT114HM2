@@ -1,0 +1,8 @@
+public enum PayloadType {		
+	CONNECT,
+	DISCONNECT,
+	MESSAGE,
+	SPECTATOR,
+	PLAYER1,
+	PLAYER2
+}
