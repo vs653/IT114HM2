@@ -150,6 +150,21 @@ public class SampleSocketClient {
 					String.format("%s", payload.getMessage())
 			);
 			break;
+		case SPECTATOR:
+			System.out.println(
+					String.format("Client \"%s\" is a spectator", payload.getMessage())
+			);
+			break;
+		case PLAYER1:
+			System.out.println(
+					String.format("Client \"%s\" is player 1", payload.getMessage())
+			);
+			break;
+		case PLAYER2:
+			System.out.println(
+					String.format("Client \"%s\" is player 2", payload.getMessage())
+			);
+			break;
 		default:
 			System.out.println("Unhandled payload type: " + payload.getPayloadType().toString());
 			break;

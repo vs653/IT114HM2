@@ -43,6 +43,21 @@ public class ServerThread extends Thread{
 		//server.broadcast(payload, this.getId());
 		server.broadcast(payload, this.clientName);
 	}
+	void broadcastSpectator() {
+		Payload payload = new Payload();
+		payload.setPayloadType(PayloadType.SPECTATOR);
+		server.broadcast(payload, this.clientName);
+	}
+	void broadcastPlayer1() {
+		Payload payload = new Payload();
+		payload.setPayloadType(PayloadType.PLAYER1);
+		server.broadcast(payload, this.clientName);
+	}
+	void broadcastPlayer2() {
+		Payload payload = new Payload();
+		payload.setPayloadType(PayloadType.PLAYER2);
+		server.broadcast(payload, this.clientName);
+	}
 	public boolean send(Payload payload) {
 		try {
 			out.writeObject(payload);
@@ -108,6 +123,15 @@ public class ServerThread extends Thread{
 			//we can just pass the whole payload onward
 			payload.setMessage(WordBlackList.filter(payload.getMessage()));
 			server.broadcast(payload, this.clientName);
+			break;
+		case SPECTATOR:
+			broadcastSpectator();
+			break;
+		case PLAYER1:
+			broadcastPlayer1();
+			break;
+		case PLAYER2:
+			broadcastPlayer2();
 			break;
 		default:
 			System.out.println("Unhandled payload type from client " + payload.getPayloadType());
