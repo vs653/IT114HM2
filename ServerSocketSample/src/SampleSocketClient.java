@@ -165,6 +165,11 @@ public class SampleSocketClient {
 					String.format("Client \"%s\" is player 2", payload.getMessage())
 			);
 			break;
+		case DRAW:
+			System.out.println(
+					String.format("Game is a Draw!")
+			);
+			break;
 		default:
 			System.out.println("Unhandled payload type: " + payload.getPayloadType().toString());
 			break;

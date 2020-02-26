@@ -58,6 +58,16 @@ public class ServerThread extends Thread{
 		payload.setPayloadType(PayloadType.PLAYER2);
 		server.broadcast(payload, this.clientName);
 	}
+	void broadcastWin(String player) {
+		Payload payload = new Payload();
+		payload.setPayloadType(PayloadType.WIN);
+		server.broadcast(payload, player);
+	}
+	void broadcastDraw() {
+		Payload payload = new Payload();
+		payload.setPayloadType(PayloadType.DRAW);
+		server.broadcast(payload);
+	}
 	public boolean send(Payload payload) {
 		try {
 			out.writeObject(payload);

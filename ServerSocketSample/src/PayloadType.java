@@ -4,5 +4,7 @@ public enum PayloadType {
 	MESSAGE,
 	SPECTATOR,
 	PLAYER1,
-	PLAYER2
+	PLAYER2,
+	WIN,
+	DRAW
 }
