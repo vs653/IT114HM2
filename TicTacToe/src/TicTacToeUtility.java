@@ -1,7 +1,5 @@
-import java.util.*;
-
 public class TicTacToeUtility {
-	public static boolean isWin(int[][] board, int player) {
+	public boolean isWin(int[][] board, int player) {
 		for (int i = 0; i < board.length; i++) {
 			int count = 0;
 			for (int j = 0; j < board[i].length; j++) {
@@ -35,7 +33,7 @@ public class TicTacToeUtility {
 			return true;
 		return false;
 	}
-	public static boolean isTie(int[][] board, int player) {
+	public boolean isTie(int[][] board) {
 		boolean isFull = true;
 		for(int i = 0; i < board.length; i++) {
 			for(int j = 0; j < board.length; j++) {
@@ -44,7 +42,7 @@ public class TicTacToeUtility {
 				}
 			}
 		}
-		if(isFull && !isWin(board, player)) {
+		if(isFull && !isWin(board, 1) && !isWin(board, 2)) {
 			return true;
 		} else {
 			return false;

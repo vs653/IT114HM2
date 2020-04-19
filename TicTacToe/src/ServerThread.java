@@ -8,65 +8,30 @@ public class ServerThread extends Thread{
 	private ObjectInputStream in;//from client
 	private ObjectOutputStream out;//to client
 	private boolean isRunning = false;
-	private SampleSocketServer server;//ref to our server so we can call methods on it
+	private TicTacToeServer server;//ref to our server so we can call methods on it
 	//more easily
-	private String clientName = "Anon";
-	public ServerThread(Socket myClient, SampleSocketServer server) throws IOException {
+	private String clientName = "Null";
+	public String getClientName() {
+		return this.clientName;
+	}
+	public ServerThread(Socket myClient, TicTacToeServer server) throws IOException {
 		this.client = myClient;
 		this.server = server;
 		isRunning = true;
 		out = new ObjectOutputStream(client.getOutputStream());
 		in = new ObjectInputStream(client.getInputStream());
-		
-		//let everyone know we're here...
-		//we actually can't do this here
-		//when we send the message, we aren't in the clients list yet
-		//so we won't see that we connected. Jump down to run()
-		//broadcastConnected();
 	}
 	void broadcastConnected() {
 		Payload payload = new Payload();
 		payload.setPayloadType(PayloadType.CONNECT);
-		//note we don't need to specify message as it'll be handle by the server
-		//for this case
-		//we can send our name instead of id
-		//server.broadcast(payload, this.getId());
+		payload.setMessage("Has Connected!");
 		server.broadcast(payload, this.clientName);
 	}
 	void broadcastDisconnected() {
-		//let everyone know we're here
 		Payload payload = new Payload();
 		payload.setPayloadType(PayloadType.DISCONNECT);
-		//note we don't need to specify message as it'll be handle by the server
-		//for this case
-		//we can send our name instead of id
-		//server.broadcast(payload, this.getId());
+		payload.setMessage("Has Disconnected!");
 		server.broadcast(payload, this.clientName);
-	}
-	void broadcastSpectator() {
-		Payload payload = new Payload();
-		payload.setPayloadType(PayloadType.SPECTATOR);
-		server.broadcast(payload, this.clientName);
-	}
-	void broadcastPlayer1() {
-		Payload payload = new Payload();
-		payload.setPayloadType(PayloadType.PLAYER1);
-		server.broadcast(payload, this.clientName);
-	}
-	void broadcastPlayer2() {
-		Payload payload = new Payload();
-		payload.setPayloadType(PayloadType.PLAYER2);
-		server.broadcast(payload, this.clientName);
-	}
-	void broadcastWin(String player) {
-		Payload payload = new Payload();
-		payload.setPayloadType(PayloadType.WIN);
-		server.broadcast(payload, player);
-	}
-	void broadcastDraw() {
-		Payload payload = new Payload();
-		payload.setPayloadType(PayloadType.DRAW);
-		server.broadcast(payload);
 	}
 	public boolean send(Payload payload) {
 		try {
@@ -82,7 +47,6 @@ public class ServerThread extends Thread{
 	}
 	@Deprecated
 	public boolean send(String message) {
-		//added a boolean so we can see if the send was successful
 		Payload payload = new Payload();
 		payload.setPayloadType(PayloadType.MESSAGE);
 		payload.setMessage(message);
@@ -91,26 +55,17 @@ public class ServerThread extends Thread{
 	@Override
 	public void run() {
 		try {
-			//here we can let people know. We should be on the list
-			//so we'll see that we connected
-			//if we're using client name then we can comment this part out and use
-			//it only when we get a connect payload from our client
-			//broadcastConnected();
 			Payload fromClient;
-			while(isRunning 
-					&& !client.isClosed()
-					&& (fromClient = (Payload)in.readObject()) != null) {//open while loop
+			while(isRunning && !client.isClosed() && (fromClient = (Payload)in.readObject()) != null) {
 				processPayload(fromClient);
-			}//close while loop
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 			System.out.println("Terminating Client");
 		}
 		finally {
-			//we're going to try to send our disconnect message, but it could fail
 			broadcastDisconnected();
-			//TODO
 			System.out.println("Server Cleanup");
 			cleanup();
 		}
@@ -121,7 +76,6 @@ public class ServerThread extends Thread{
 		case CONNECT:
 			String m = payload.getMessage();
 			if(m != null) {
-				m = WordBlackList.filter(m);
 				this.clientName = m;
 			}
 			broadcastConnected();
@@ -130,18 +84,12 @@ public class ServerThread extends Thread{
 			System.out.println("Received disconnect");
 			break;
 		case MESSAGE:
-			//we can just pass the whole payload onward
-			payload.setMessage(WordBlackList.filter(payload.getMessage()));
+			payload.setMessage(payload.getMessage());
 			server.broadcast(payload, this.clientName);
 			break;
-		case SPECTATOR:
-			broadcastSpectator();
-			break;
-		case PLAYER1:
-			broadcastPlayer1();
-			break;
-		case PLAYER2:
-			broadcastPlayer2();
+		case MOVE:
+			payload.setMove(payload.getMove());
+			server.broadcastMove(payload);
 			break;
 		default:
 			System.out.println("Unhandled payload type from client " + payload.getPayloadType());

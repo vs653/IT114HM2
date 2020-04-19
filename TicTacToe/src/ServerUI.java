@@ -5,6 +5,7 @@ import java.awt.event.*;
 
 
 public class ServerUI extends JFrame{
+	private static final long serialVersionUID = -6625037986217386003L;
 	private JTextArea serverStats, clients;
 	private JTextField nameInput;
 	private JButton btnSubmit, btnStart, btnStop;
@@ -13,12 +14,15 @@ public class ServerUI extends JFrame{
 	private JLabel text;
 	private TimerListener tlistener;
 	private Timer tmr;
+	private int time;
+	TicTacToeServer server;
 	public ServerUI() {
 		JFrame jf = new JFrame("Tic-Tac-Toe Server UI");
 		Container cp = jf.getContentPane();
 		cp.setLayout(null);
+		server = new TicTacToeServer();
 		tlistener = new TimerListener();
-		tmr = new Timer(65, tlistener);
+		tmr = new Timer(1, tlistener);
 		blistener = new ButtonListener();
 		serverStats = new JTextArea();
 		serverStats.setEditable(false);
@@ -31,7 +35,7 @@ public class ServerUI extends JFrame{
 		userInput = new JPanel();
 		userInput.setLayout(new BorderLayout());
 		userInput.setPreferredSize(new Dimension(150,150));
-		text = new JLabel("Enter Client To Be Removed: ");
+		text = new JLabel("Enter ID Of Client To Be Removed: ");
 		nameInput = new JTextField();
 		nameInput.setPreferredSize(new Dimension(100,30));
 		btnSubmit = new JButton("Submit");
@@ -66,16 +70,32 @@ public class ServerUI extends JFrame{
 		jf.setSize(520, 540);
 	}
 	public static void main(String[] args) {
+		@SuppressWarnings("unused")
 		ServerUI s = new ServerUI();
 	}
 	private class ButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
-			
+			if(event.getSource() == btnSubmit) {
+				server.removeClient(nameInput.getText());
+				nameInput.setText("");
+				clients.setText("Clients Connected: \n" + server.getClientList());
+			} else if(event.getSource() == btnStart) {
+				server.main(null);
+				tmr.start();
+			} else {
+				server.isRunning = false;
+				tmr.stop();
+				time = 0;
+			}
 		}
 	}
 	private class TimerListener implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
-			
+			clients.setText("Clients Connected: \n" + server.getClientList());
+			time++;
+			if(time % 1000 == 0) {
+				serverStats.setText("Number of Clients: " + server.getNumberOfClients() + "\n\nPort Number: " + server.getPortNumber() + "\n\nTime Running: " + time + "\n");
+			}
 		}
 	}
 }
