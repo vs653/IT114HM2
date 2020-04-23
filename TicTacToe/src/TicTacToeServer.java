@@ -11,6 +11,9 @@ public class TicTacToeServer {
 	public static boolean isRunning = true;
 	private List<ServerThread> clients = new ArrayList<ServerThread>();
 	private ArrayList<String> ids = new ArrayList<String>();
+	private List<Integer> wins = new ArrayList<Integer>();
+	private static int specCount = 0;
+	private int[][] board = new int[3][3];
 	private void start(int port) {
 		this.port = port;
 		System.out.println("Waiting for client");
@@ -26,6 +29,7 @@ public class TicTacToeServer {
 					clients.add(thread);
 					id = getID();
 					ids.add(id);
+					wins.add(0);
 					System.out.println("Client added to clients pool");
 				}
 				catch(IOException e) {
@@ -50,6 +54,36 @@ public class TicTacToeServer {
 	}
 	public int getNumberOfClients() {
 		return clients.size();
+	}
+	public void verifyMove(Payload p) {
+		if(p.getX() >= 0 && p.getX() < 3 && p.getY() >= 0 && p.getY() < 3) {
+			if(board[p.getX()][p.getY()] == 0) {
+				board[p.getX()][p.getY()] = Integer.parseInt(p.getPlayer());
+			}
+		}
+		broadcastMove(p);
+		checkWinAndTie(p);
+	}
+	public void checkWinAndTie(Payload p) {
+		TicTacToeUtility t = new TicTacToeUtility();
+		if(t.isWin(board, Integer.parseInt(p.getPlayer()))) {
+			for(int i = 0; i < clients.size(); i++) {
+				if(clients.get(i).getClientName().equalsIgnoreCase(p.getName())) {
+					wins.set(i, wins.get(i) + 1);
+				}
+			}
+			Payload payload = new Payload();
+			payload.setPayloadType(PayloadType.WIN);
+			payload.setMessage("Game Over! Player " + p.getPlayer() + " Wins!\n");
+			broadcastWin(payload);
+			board = new int[3][3];
+		} else if(t.isTie(board)) {
+			Payload payload = new Payload();
+			payload.setPayloadType(PayloadType.WIN);
+			payload.setMessage("Game Over! It's A Tie!\n");
+			broadcastWin(payload);
+			board = new int[3][3];
+		}
 	}
 	public void removeClient(String id) {
 		for(int i = 0; i < ids.size(); i++) {
@@ -83,22 +117,52 @@ public class TicTacToeServer {
 		}
 		return -1;
 	}
+	public synchronized void broadcastWin(Payload payload) {
+		System.out.println("Sending message to " + clients.size() + " clients");
+		Iterator<ServerThread> iter = clients.iterator();
+		Iterator<String> iterS = ids.iterator();
+		Iterator<Integer> iterW = wins.iterator();
+		String gameStatText = "Spectators: " + specCount + "\nName: \t\tWins: \n";
+		for(int i = 0; i < clients.size(); i++) {
+			gameStatText += clients.get(i).getClientName() + " \t\t" + wins.get(i) + " \n";
+		}
+		payload.setGameStatText(gameStatText);
+		while(iter.hasNext()) {
+			ServerThread client = iter.next();
+			String clientID = iterS.next();
+			int clientWin = iterW.next();
+			boolean boardSent = client.send(payload);
+			if(!boardSent) {
+				iterS.remove();
+				iter.remove();
+				iterW.remove();
+				System.out.println("Removed client " + client.getId());
+			}
+		}
+	}
 	public synchronized void broadcast(Payload payload, String name) {
 		String msg = payload.getMessage();
 		payload.setMessage(name + ": " + msg + "\n");
+		if(payload.getPlayer().equalsIgnoreCase("S")) {
+			this.specCount += 1;
+			payload.setSpecCount(specCount);
+		}
 		broadcast(payload);
 	}
 	public synchronized void broadcastMove(Payload payload) {
 		System.out.println("Sending message to " + clients.size() + " clients");
 		Iterator<ServerThread> iter = clients.iterator();
 		Iterator<String> iterS = ids.iterator();
+		Iterator<Integer> iterW = wins.iterator();
 		while(iter.hasNext()) {
 			ServerThread client = iter.next();
 			String clientID = iterS.next();
+			int clientWins = iterW.next();
 			boolean boardSent = client.send(payload);
 			if(!boardSent) {
 				iterS.remove();
 				iter.remove();
+				iterW.remove();
 				System.out.println("Removed client " + client.getId());
 			}
 		}
@@ -107,13 +171,16 @@ public class TicTacToeServer {
 		System.out.println("Sending message to " + clients.size() + " clients");
 		Iterator<ServerThread> iter = clients.iterator();
 		Iterator<String> iterS = ids.iterator();
+		Iterator<Integer> iterW = wins.iterator();
 		while(iter.hasNext()) {
 			ServerThread client = iter.next();
 			String clientID = iterS.next();
+			int clientWins = iterW.next();
 			boolean messageSent = client.send(payload);
 			if(!messageSent) {
 				iterS.remove();
 				iter.remove();
+				iterW.remove();
 				System.out.println("Removed client " + client.getId());
 			}
 		}

@@ -1,22 +1,62 @@
 import java.io.Serializable;
-import javax.swing.*;
 public class Payload implements Serializable{
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -6625037986217386003L;
 	private String message;
-	private JButton[][] move;
+	private int[][] move;
+	private String playerSelect;
+	private int specCount;
+	private String name;
+	private String gameStats;
+	private int x, y;
+	public void setX(int x) {
+		this.x = x;
+	}
+	public int getX() {
+		return this.x;
+	}
+	public void setY(int y) {
+		this.y = y;
+	}
+	public int getY() {
+		return this.y;
+	}
 	public void setMessage(String s) {
 		this.message = s;
 	}
 	public String getMessage() {
 		return this.message;
 	}
-	public void setMove(JButton[][] move) {
+	public void setPlayer(String s) {
+		this.playerSelect = s;
+	}
+	public String getName() {
+		return this.name;
+	}
+	public void setName(String s) {
+		this.name = s;
+	}
+	public String getPlayer() {
+		return this.playerSelect;
+	}
+	public int getSpecCount() {
+		return this.specCount;
+	}
+	public void setSpecCount(int s) {
+		this.specCount = s;
+	}
+	public void setGameStatText(String s) {
+		this.gameStats = s;
+	}
+	public String getGameStats() {
+		return this.gameStats;
+	}
+	public void setMove(int[][] move) {
 		this.move = move;
 	}
-	public JButton[][] getMove() {
+	public int[][] getMove() {
 		return this.move;
 	}
 	private PayloadType payloadType;

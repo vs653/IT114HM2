@@ -2,5 +2,6 @@ public enum PayloadType {
 	CONNECT,
 	DISCONNECT,
 	MESSAGE,
-	MOVE
+	MOVE,
+	WIN
 }

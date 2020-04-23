@@ -80,8 +80,8 @@ public class ServerUI extends JFrame{
 				nameInput.setText("");
 				clients.setText("Clients Connected: \n" + server.getClientList());
 			} else if(event.getSource() == btnStart) {
-				server.main(null);
 				tmr.start();
+				server.main(null);
 			} else {
 				server.isRunning = false;
 				tmr.stop();
@@ -94,7 +94,7 @@ public class ServerUI extends JFrame{
 			clients.setText("Clients Connected: \n" + server.getClientList());
 			time++;
 			if(time % 1000 == 0) {
-				serverStats.setText("Number of Clients: " + server.getNumberOfClients() + "\n\nPort Number: " + server.getPortNumber() + "\n\nTime Running: " + time + "\n");
+				serverStats.setText("Number of Clients: " + server.getNumberOfClients() + "\n\nPort Number: " + server.getPortNumber() + "\n\nTime Running: " + (time/1000) + "s\n");
 			}
 		}
 	}

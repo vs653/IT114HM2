@@ -11,8 +11,12 @@ public class ServerThread extends Thread{
 	private TicTacToeServer server;//ref to our server so we can call methods on it
 	//more easily
 	private String clientName = "Null";
+	private int clientWins = 0;
 	public String getClientName() {
 		return this.clientName;
+	}
+	public int getClientWins() {
+		return this.clientWins;
 	}
 	public ServerThread(Socket myClient, TicTacToeServer server) throws IOException {
 		this.client = myClient;
@@ -21,9 +25,10 @@ public class ServerThread extends Thread{
 		out = new ObjectOutputStream(client.getOutputStream());
 		in = new ObjectInputStream(client.getInputStream());
 	}
-	void broadcastConnected() {
+	void broadcastConnected(Payload p) {
 		Payload payload = new Payload();
 		payload.setPayloadType(PayloadType.CONNECT);
+		payload.setPlayer(p.getPlayer());
 		payload.setMessage("Has Connected!");
 		server.broadcast(payload, this.clientName);
 	}
@@ -78,7 +83,7 @@ public class ServerThread extends Thread{
 			if(m != null) {
 				this.clientName = m;
 			}
-			broadcastConnected();
+			broadcastConnected(payload);
 			break;
 		case DISCONNECT:
 			System.out.println("Received disconnect");
@@ -88,8 +93,10 @@ public class ServerThread extends Thread{
 			server.broadcast(payload, this.clientName);
 			break;
 		case MOVE:
-			payload.setMove(payload.getMove());
-			server.broadcastMove(payload);
+			payload.setName(this.clientName);
+			server.verifyMove(payload);
+			break;
+		case WIN:
 			break;
 		default:
 			System.out.println("Unhandled payload type from client " + payload.getPayloadType());
