@@ -150,11 +150,10 @@ public class TicTacToeClient {
 		payload.setPlayer(clientPlayer);
 		toServer.add(payload);
 	}
-	public void sendMessage(String message, String player) {
+	public void sendMessage(String message) {
 		Payload payload = new Payload();
 		payload.setPayloadType(PayloadType.MESSAGE);
 		payload.setMessage(message);
-		payload.setPlayer(player);
 		toServer.add(payload);
 	}
 	public void sendMove(int x, int y, int player) {
@@ -165,11 +164,17 @@ public class TicTacToeClient {
 		payload.setPlayer("" + player);
 		toServer.add(payload);
 	}
+	public void sendDisconnect(String name) {
+		Payload payload = new Payload();
+		payload.setPayloadType(PayloadType.DISCONNECT);
+		payload.setName(name);
+		toServer.add(payload);
+	}
 	private void processPayload(Payload payload) {
 		switch(payload.getPayloadType()) {
 		case CONNECT:
 			if(onReceiveListener != null) {
-				onReceiveListener.onReceivedConnect(payload.getMessage(), "Spectators: " + payload.getSpecCount() + "\nName: \t\tWins: \n");
+				onReceiveListener.onReceivedConnect(payload.getMessage(), "Spectators: " + payload.getSpecCount() + "\nName: \t\tWins: \n", payload.getBoard());
 			}
 			break;
 		case DISCONNECT:
@@ -192,6 +197,11 @@ public class TicTacToeClient {
 				onReceiveListener.onReceivedWin(payload.getMessage(), payload.getGameStats());
 			}
 			break;
+		case FORCEDISCONNECT:
+			if(onReceiveListener != null) {
+				onReceiveListener.onReceivedDisconnect();
+			}
+			break;
 		default:
 			System.out.println("Unhandled payload type: " + payload.getPayloadType().toString());
 			break;
@@ -210,8 +220,9 @@ public class TicTacToeClient {
 }
 
 interface OnReceive{
-	void onReceivedConnect(String msg, String spectators);
+	void onReceivedConnect(String msg, String spectators, int[][] board);
 	void onReceivedMessage(String msg);
 	void onReceivedMove(int x, int y, int player);
 	void onReceivedWin(String msg, String gameStatsText);
+	void onReceivedDisconnect();
 }

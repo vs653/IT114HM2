@@ -3,5 +3,6 @@ public enum PayloadType {
 	DISCONNECT,
 	MESSAGE,
 	MOVE,
-	WIN
+	WIN,
+	FORCEDISCONNECT
 }

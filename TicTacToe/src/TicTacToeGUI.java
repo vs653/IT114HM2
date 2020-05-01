@@ -4,12 +4,8 @@ import java.awt.event.*;
 import java.awt.Color;
 import javax.swing.BorderFactory;
 import javax.swing.*;
-import java.util.*;
-import java.io.*;
-import java.net.*;
 
 public class TicTacToeGUI extends JFrame implements OnReceive{
-	//private static boolean isRunning = true;
 	private static final long serialVersionUID = -6625037986217386003L;
 	public static JButton[][] board;
 	private JPanel buttons;
@@ -21,6 +17,8 @@ public class TicTacToeGUI extends JFrame implements OnReceive{
 	private String player;
 	private static int[][] intBoard;
 	private String name;
+	static int port;
+	static String host;
 	private boolean yourTurn;
 	static TicTacToeClient client;
 	public TicTacToeGUI() {
@@ -35,6 +33,8 @@ public class TicTacToeGUI extends JFrame implements OnReceive{
 		blistener = new ButtonListener();
 		name = JOptionPane.showInputDialog("Enter Your Name: ");
 		player = JOptionPane.showInputDialog("Enter 1 For Player 1, 2 For Player 2, S For SPECTATOR: ");
+		port = Integer.parseInt(JOptionPane.showInputDialog("Enter Port Number (3000 is For TicTacToe Server): "));
+		host = JOptionPane.showInputDialog("Enter Hostname (127.0.0.1 is For TicTacToe Server): ");
 		while(!player.equalsIgnoreCase("1") && !player.equalsIgnoreCase("2") && !player.equalsIgnoreCase("S")) {
 			player = JOptionPane.showInputDialog("Enter 1 For Player 1, 2 For Player 2, S For SPECTATOR: ");
 		}
@@ -97,15 +97,15 @@ public class TicTacToeGUI extends JFrame implements OnReceive{
 		jf.setSize(600, 500);
 		jf.addWindowListener(new WindowAdapter() {
 			  public void windowClosing(WindowEvent we) {
+				  	client.sendDisconnect(name);
 				    System.exit(0);
 				  }
 		});
 	}
 	public static void main(String[] args) {
-		@SuppressWarnings("unused")
 		TicTacToeGUI t = new TicTacToeGUI();
 		client = new TicTacToeClient();
-		client = TicTacToeClient.connect("127.0.0.1", 3000);
+		client = TicTacToeClient.connect(host, port);
 		client.registerListener(t);
 		t.callMethod();
 	}
@@ -115,7 +115,7 @@ public class TicTacToeGUI extends JFrame implements OnReceive{
 	private class ButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
 			if(event.getSource() == submit) {
-				client.sendMessage(textField.getText(), player);
+				client.sendMessage(textField.getText());
 				textField.setText("");
 			} else {
 				if(yourTurn) {
@@ -169,14 +169,28 @@ public class TicTacToeGUI extends JFrame implements OnReceive{
 				board[row][col].setEnabled(true);
 				if(player.equalsIgnoreCase("S")) {
 					board[row][col].removeActionListener(blistener);
+				} else {
+					board[row][col].addActionListener(blistener);
+				}
+			}
+		}
+	}
+	public void copyBoard(int[][] intBoard) {
+		for(int i = 0; i < 3; i++) {
+			for(int j = 0; j < 3; j++) {
+				if(intBoard[i][j] == 1) {
+					board[i][j].setText("X");
+				} else if(intBoard[i][j] == 2) {
+					board[i][j].setText("O");
 				}
 			}
 		}
 	}
 	@Override
-	public void onReceivedConnect(String msg, String spectators) {
+	public void onReceivedConnect(String msg, String spectators, int[][] intBoard) {
 		textArea.append(msg);
 		gameStats.setText(spectators);
+		copyBoard(intBoard);
 	}
 	@Override
 	public void onReceivedMessage(String msg) {
@@ -197,5 +211,10 @@ public class TicTacToeGUI extends JFrame implements OnReceive{
 		textArea.append(msg);
 		gameStats.setText(gameStatsText);
 		resetBoard();
+	}
+	@Override
+	public void onReceivedDisconnect() {
+		JOptionPane.showMessageDialog(null, "Sorry You Have Been Disconnected By the Server!");
+		System.exit(0);
 	}
 }

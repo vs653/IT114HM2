@@ -14,46 +14,74 @@ public class TicTacToeServer {
 	private List<Integer> wins = new ArrayList<Integer>();
 	private static int specCount = 0;
 	private int[][] board = new int[3][3];
-	private void start(int port) {
-		this.port = port;
-		System.out.println("Waiting for client");
-		try (ServerSocket serverSocket = new ServerSocket(port);) {
-			while(TicTacToeServer.isRunning) {
-				try {
-					Socket client = serverSocket.accept();
-					System.out.println("Client connecting...");
-					//Server thread is the server's representation of the client
-					ServerThread thread = new ServerThread(client, this);
-					thread.start();
-					//add client thread to list of clients
-					clients.add(thread);
-					id = getID();
-					ids.add(id);
-					wins.add(0);
-					System.out.println("Client added to clients pool");
+	private OnReceiveServer onReceiveListener;
+	public void registerListener(OnReceiveServer listener) {
+		this.onReceiveListener = listener;
+	}
+	public void clientConnect(String name) {
+		for(int i = 0; i < clients.size(); i++) {
+			if(name.equals(clients.get(i).getClientName())) {
+				if(onReceiveListener != null) {
+					onReceiveListener.onReceivedConnect(name, ids.get(i), wins.get(i));
 				}
-				catch(IOException e) {
-					e.printStackTrace();
-				}
-			}
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				isRunning = false;
-				Thread.sleep(50);
-				System.out.println("closing server socket");
-			} catch (Exception e) {
-				e.printStackTrace();
 			}
 		}
+	}
+	public void start(int port) {
+		this.port = port;
+		System.out.println("Waiting for client");
+		Thread serverThread = new Thread() {
+			@Override
+			public void run() {
+				try (ServerSocket serverSocket = new ServerSocket(port);) {
+					while(TicTacToeServer.isRunning) {
+						try {
+							Socket client = serverSocket.accept();
+							System.out.println("Client connecting...");
+							//Server thread is the server's representation of the client
+							ServerThread thread = new ServerThread(client, getServer());
+							thread.start();
+							//add client thread to list of clients
+							clients.add(thread);
+							id = getID();
+							ids.add(id);
+							wins.add(0);
+							System.out.println("Client added to clients pool");
+						}
+						catch(IOException e) {
+							e.printStackTrace();
+						}
+					}
+					
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					try {
+						isRunning = false;
+						Thread.sleep(50);
+						System.out.println("closing server socket");
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		};
+		serverThread.start();
+	}
+	public TicTacToeServer getServer() {
+		return this;
 	}
 	public int getPortNumber() {
 		return port;
 	}
 	public int getNumberOfClients() {
 		return clients.size();
+	}
+	public void stopServer() {
+		for(int i = 0; i < ids.size(); i++) {
+			removeClient(ids.get(i));
+		}
+		TicTacToeServer.isRunning = false;
 	}
 	public void verifyMove(Payload p) {
 		if(p.getX() >= 0 && p.getX() < 3 && p.getY() >= 0 && p.getY() < 3) {
@@ -88,8 +116,31 @@ public class TicTacToeServer {
 	public void removeClient(String id) {
 		for(int i = 0; i < ids.size(); i++) {
 			if(id.equalsIgnoreCase(ids.get(i))) {
+				Payload payload = new Payload();
+				payload.setPayloadType(PayloadType.FORCEDISCONNECT);
+				clients.get(i).send(payload);
 				ids.remove(i);
 				clients.remove(i);
+				wins.remove(i);
+			}
+		}
+		if(onReceiveListener != null) {
+			onReceiveListener.onReceivedDisconnect(id);
+		}
+	}
+	public void disconnectPlayer(String name) {
+		for(int i = 0; i < clients.size(); i++) {
+			if(name.equalsIgnoreCase(clients.get(i).getClientName())) {
+				if(onReceiveListener != null) {
+					onReceiveListener.onReceivedDisconnect(ids.get(i));
+				}
+				clients.remove(i);
+				ids.remove(i);
+				wins.remove(i);
+				Payload payload = new Payload();
+				payload.setPayloadType(PayloadType.DISCONNECT);
+				payload.setMessage("Has Disconnected!");
+				broadcast(payload, name);
 			}
 		}
 	}
@@ -129,7 +180,9 @@ public class TicTacToeServer {
 		payload.setGameStatText(gameStatText);
 		while(iter.hasNext()) {
 			ServerThread client = iter.next();
+			@SuppressWarnings("unused")
 			String clientID = iterS.next();
+			@SuppressWarnings("unused")
 			int clientWin = iterW.next();
 			boolean boardSent = client.send(payload);
 			if(!boardSent) {
@@ -143,9 +196,17 @@ public class TicTacToeServer {
 	public synchronized void broadcast(Payload payload, String name) {
 		String msg = payload.getMessage();
 		payload.setMessage(name + ": " + msg + "\n");
-		if(payload.getPlayer().equalsIgnoreCase("S")) {
-			this.specCount += 1;
-			payload.setSpecCount(specCount);
+		switch(payload.getPayloadType()) {
+		case CONNECT:
+			clientConnect(name);
+			payload.setBoard(board);
+			if(payload.getPlayer().equalsIgnoreCase("S")) {
+				specCount += 1;
+				payload.setSpecCount(specCount);
+			}
+			break;
+		default:
+			break;
 		}
 		broadcast(payload);
 	}
@@ -156,7 +217,9 @@ public class TicTacToeServer {
 		Iterator<Integer> iterW = wins.iterator();
 		while(iter.hasNext()) {
 			ServerThread client = iter.next();
+			@SuppressWarnings("unused")
 			String clientID = iterS.next();
+			@SuppressWarnings("unused")
 			int clientWins = iterW.next();
 			boolean boardSent = client.send(payload);
 			if(!boardSent) {
@@ -174,7 +237,9 @@ public class TicTacToeServer {
 		Iterator<Integer> iterW = wins.iterator();
 		while(iter.hasNext()) {
 			ServerThread client = iter.next();
+			@SuppressWarnings("unused")
 			String clientID = iterS.next();
+			@SuppressWarnings("unused")
 			int clientWins = iterW.next();
 			boolean messageSent = client.send(payload);
 			if(!messageSent) {
@@ -230,6 +295,9 @@ public class TicTacToeServer {
 		TicTacToeServer server = new TicTacToeServer();
 		System.out.println("Listening on port " + port);
 		server.start(port);
-		System.out.println("Server Stopped");
 	}
+}
+interface OnReceiveServer{
+	void onReceivedConnect(String name, String id, int wins);
+	void onReceivedDisconnect(String id);
 }

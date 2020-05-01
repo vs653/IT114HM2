@@ -45,7 +45,7 @@ public class ServerThread extends Thread{
 		}
 		catch(IOException e) {
 			System.out.println("Error sending message to client");
-			e.printStackTrace();
+			//e.printStackTrace();
 			cleanup();
 			return false;
 		}
@@ -70,7 +70,7 @@ public class ServerThread extends Thread{
 			System.out.println("Terminating Client");
 		}
 		finally {
-			broadcastDisconnected();
+			//broadcastDisconnected();
 			System.out.println("Server Cleanup");
 			cleanup();
 		}
@@ -86,7 +86,7 @@ public class ServerThread extends Thread{
 			broadcastConnected(payload);
 			break;
 		case DISCONNECT:
-			System.out.println("Received disconnect");
+			server.disconnectPlayer(payload.getName());
 			break;
 		case MESSAGE:
 			payload.setMessage(payload.getMessage());

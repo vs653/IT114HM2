@@ -5,12 +5,18 @@ public class Payload implements Serializable{
 	 */
 	private static final long serialVersionUID = -6625037986217386003L;
 	private String message;
-	private int[][] move;
+	private int[][] board;
 	private String playerSelect;
 	private int specCount;
 	private String name;
 	private String gameStats;
 	private int x, y;
+	public void setBoard(int[][] board) {
+		this.board = board;
+	}
+	public int[][] getBoard() {
+		return this.board;
+	}
 	public void setX(int x) {
 		this.x = x;
 	}
@@ -52,12 +58,6 @@ public class Payload implements Serializable{
 	}
 	public String getGameStats() {
 		return this.gameStats;
-	}
-	public void setMove(int[][] move) {
-		this.move = move;
-	}
-	public int[][] getMove() {
-		return this.move;
 	}
 	private PayloadType payloadType;
 	public void setPayloadType(PayloadType pt) {

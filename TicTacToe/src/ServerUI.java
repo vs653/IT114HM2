@@ -1,10 +1,10 @@
 import javax.swing.*;
-import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 
 
-public class ServerUI extends JFrame{
+public class ServerUI extends JFrame implements OnReceiveServer{
 	private static final long serialVersionUID = -6625037986217386003L;
 	private JTextArea serverStats, clients;
 	private JTextField nameInput;
@@ -15,12 +15,17 @@ public class ServerUI extends JFrame{
 	private TimerListener tlistener;
 	private Timer tmr;
 	private int time;
-	TicTacToeServer server;
+	private int clientCount;
+	private ArrayList<String> idNameList;
+	static TicTacToeServer server;
+	private ServerUI self;
 	public ServerUI() {
+		self = this;
+		idNameList = new ArrayList<String>();
 		JFrame jf = new JFrame("Tic-Tac-Toe Server UI");
 		Container cp = jf.getContentPane();
 		cp.setLayout(null);
-		server = new TicTacToeServer();
+		clientCount = 0;
 		tlistener = new TimerListener();
 		tmr = new Timer(1, tlistener);
 		blistener = new ButtonListener();
@@ -30,7 +35,7 @@ public class ServerUI extends JFrame{
 		serverStats.setPreferredSize(new Dimension(150, 150));
 		clients = new JTextArea();
 		clients.setEditable(false);
-		clients.setText("Clients Connected: \n");
+		clients.setText("Clients Connected: \nID: \tName: \tWins: \n\n");
 		clients.setPreferredSize(new Dimension(100, 500));
 		userInput = new JPanel();
 		userInput.setLayout(new BorderLayout());
@@ -65,6 +70,7 @@ public class ServerUI extends JFrame{
 		panel.setBounds(250, 0, 250, 500);
 		cp.add(clients);
 		cp.add(panel);
+		//jf.add(cp);
 		jf.pack();
 		jf.setVisible(true);
 		jf.setSize(520, 540);
@@ -74,6 +80,7 @@ public class ServerUI extends JFrame{
 		ServerUI s = new ServerUI();
 	}
 	private class ButtonListener implements ActionListener {
+		@SuppressWarnings("static-access")
 		public void actionPerformed(ActionEvent event) {
 			if(event.getSource() == btnSubmit) {
 				server.removeClient(nameInput.getText());
@@ -81,9 +88,11 @@ public class ServerUI extends JFrame{
 				clients.setText("Clients Connected: \n" + server.getClientList());
 			} else if(event.getSource() == btnStart) {
 				tmr.start();
-				server.main(null);
+				server = new TicTacToeServer();
+				server.registerListener(self);
+				server.start(3000);
 			} else {
-				server.isRunning = false;
+				server.stopServer();
 				tmr.stop();
 				time = 0;
 			}
@@ -91,11 +100,30 @@ public class ServerUI extends JFrame{
 	}
 	private class TimerListener implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
-			clients.setText("Clients Connected: \n" + server.getClientList());
 			time++;
 			if(time % 1000 == 0) {
-				serverStats.setText("Number of Clients: " + server.getNumberOfClients() + "\n\nPort Number: " + server.getPortNumber() + "\n\nTime Running: " + (time/1000) + "s\n");
+				serverStats.setText("Number of Clients: " + clientCount + "\n\nPort Number: " + server.getPortNumber() + "\n\nTime Running: " + (time/1000) + "s\n");
 			}
+		}
+	}
+	@Override
+	public void onReceivedConnect(String name, String id, int wins) {
+		clientCount++;
+		idNameList.add(id + " \t" + name + " \t" + wins + " \n");
+		clients.append(id + " \t" + name + " \t" + wins + " \n");
+	}
+	@Override
+	public void onReceivedDisconnect(String id) {
+		clientCount--;
+		for(int i = 0; i < idNameList.size(); i++) {
+			if(idNameList.get(i).contains(id)) {
+				idNameList.remove(i);
+			}
+		}
+		clients.setText("Clients Connected: \nID: \tName: \tWins: \n\n");
+		clients.append("\n");
+		for(int i = 0; i < idNameList.size(); i++) {
+			clients.append(idNameList.get(i));
 		}
 	}
 }
